@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>麻将比赛管理台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ink:#1C1B1A;
+    --felt:#0F3D2E;
+    --felt-light:#15533F;
+    --tile:#FAF6EC;
+    --tile-edge:#E8E0CC;
+    --accent:#B23A2E;
+    --gold:#C9A227;
+    --line:#D9D2C2;
+    --muted:#766F5E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--tile);
+    color:var(--ink);
+  }
+  header{
+    background:var(--felt);
+    color:var(--tile);
+    padding:18px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:4px solid var(--gold);
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing:2px;
+    font-weight:700;
+  }
+  header .stage-badge{
+    background:var(--gold);
+    color:var(--felt);
+    padding:4px 14px;
+    border-radius:3px;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:1px;
+  }
+  header a.display-link{
+    color:var(--tile);
+    text-decoration:none;
+    border:1px solid var(--tile);
+    padding:6px 12px;
+    border-radius:3px;
+    font-size:13px;
+  }
+  header a.display-link:hover{background:rgba(255,255,255,0.12);}
+  main{max-width:1100px;margin:0 auto;padding:24px 20px 80px;}
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:20px 22px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    margin:0 0 14px;
+    font-size:16px;
+    color:var(--felt);
+    border-left:4px solid var(--accent);
+    padding-left:10px;
+  }
+  textarea{
+    width:100%;
+    min-height:160px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px;
+    font-size:14px;
+    font-family:inherit;
+    resize:vertical;
+  }
+  .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:12px;color:var(--muted);}
+  .field input{
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:8px 10px;
+    width:120px;
+    font-size:14px;
+  }
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:4px;
+    padding:10px 18px;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.5px;
+  }
+  .btn-primary{background:var(--felt);color:#fff;}
+  .btn-primary:hover{background:var(--felt-light);}
+  .btn-accent{background:var(--accent);color:#fff;}
+  .btn-accent:hover{opacity:0.9;}
+  .btn-ghost{background:transparent;color:var(--felt);border:1px solid var(--felt);}
+  .btn-ghost:hover{background:rgba(15,61,46,0.06);}
+  .btn-danger{background:#fff;color:var(--accent);border:1px solid var(--accent);}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .tables-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+  .tables-group-label{
+    font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--muted);margin:14px 0 8px;
+  }
+  .tables-group-label.official{color:var(--felt);}
+  .table-card{
+    border:1px solid var(--tile-edge);
+    background:#FFFDF8;
+    border-radius:5px;
+    padding:12px 14px;
+  }
+  .table-card.fixed{
+    border-color:var(--gold);
+    background:#FFFBEE;
+  }
+  .table-card.fixed .table-label{color:var(--felt);}
+  .table-card.fixed .table-no{background:var(--gold);color:#3A2A00;}
+  .table-card .table-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent);
+    letter-spacing:1px;
+    margin-bottom:8px;
+  }
+  .table-card .table-no{
+    display:inline-block;
+    background:var(--felt);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:3px;
+    letter-spacing:0;
+    margin-right:6px;
+  }
+  .player-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .player-row span{font-size:14px;}
+  .player-row input{
+    width:90px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:5px 8px;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .submitted-tag{font-size:12px;color:var(--felt);font-weight:700;}
+  table.standings{width:100%;border-collapse:collapse;font-size:14px;}
+  table.standings th,table.standings td{
+    padding:7px 10px;
+    border-bottom:1px solid var(--line);
+    text-align:left;
+  }
+  table.standings th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:0.5px;}
+  table.standings td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .standings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;}
+  .standings-block h3{font-size:13px;color:var(--felt);margin:0 0 8px;}
+  /* 选手状态管理 */
+  .player-mgmt-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .player-pill{
+    display:flex;align-items:center;gap:6px;
+    border:1px solid var(--line);border-radius:20px;
+    padding:5px 10px 5px 12px;background:#fff;font-size:13px;
+  }
+  .player-pill .pname{font-weight:600;margin-right:4px;}
+  .status-btn{
+    border:none;border-radius:12px;padding:3px 8px;
+    font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.3px;
+    transition:opacity .15s;
+  }
+  .status-btn:hover{opacity:.8;}
+  .status-btn.active{background:#0F3D2E;color:#fff;}
+  .status-btn.drop{background:#B23A2E;color:#fff;}
+  .status-btn.bye{background:#C9A227;color:#3A2A00;}
+  .status-indicator{
+    font-size:10px;font-weight:700;border-radius:8px;
+    padding:2px 6px;margin-left:2px;
+  }
+  .status-indicator.active{background:#EAF3EE;color:#0F3D2E;}
+  .status-indicator.drop{background:#FBEAE7;color:#B23A2E;}
+  .status-indicator.bye{background:#FFF8E1;color:#7A5F00;}
+  .msg.error{background:#FBEAE7;color:var(--accent);border:1px solid var(--accent);}
+  .msg.ok{background:#EAF3EE;color:var(--felt);border:1px solid var(--felt);}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;}
+  table.summary-table{
+    width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;
+  }
+  table.summary-table th{
+    background:var(--felt);color:#fff;font-weight:600;font-size:11px;
+    letter-spacing:0.5px;padding:6px 8px;border:1px solid var(--line);text-align:center;
+  }
+  table.summary-table td{
+    padding:6px 8px;border:1px solid var(--line);
+    text-align:right;font-variant-numeric:tabular-nums;
+  }
+  table.summary-table td.srank{text-align:center;font-weight:700;color:var(--accent);}
+  table.summary-table td.name-col,
+  table.summary-table th.name-col{text-align:left;}
+  table.summary-table td.subtotal{background:#F0EFE8;font-weight:700;}
+  table.summary-table td.grandtotal{background:#E8F2ED;font-weight:800;color:var(--felt);}
+  table.summary-table tr.stage-hdr th{background:var(--felt-light);font-size:12px;letter-spacing:1px;}
+  table.summary-table tbody tr:hover td{background:#F7F4EC;}
+  table.summary-table tr.sum-divider td{
+    text-align:center;font-size:11px;color:var(--muted);letter-spacing:1.5px;
+    padding:5px;border-top:2px solid var(--felt);border-bottom:2px solid var(--felt);
+    background:#EFF4F1;font-weight:600;
+  }
+  table.summary-table tr.sum-others td{color:#aaa;}
+  table.summary-table tr.sum-others td.srank{color:#bbb;}
+  table.standings tr.rank-divider-row td{
+    text-align:center;font-size:11px;color:var(--muted);letter-spacing:1px;
+    padding:4px;border-top:2px solid var(--felt);border-bottom:1px solid var(--line);
+    background:#EFF4F1;
+  }
+  table.standings tr.others-row td{color:#aaa;}
+  /* 对阵矩阵 */
+  .matrix-wrap{overflow-x:auto;margin-top:8px;}
+  table.pairing-matrix{border-collapse:collapse;font-size:12px;white-space:nowrap;}
+  table.pairing-matrix th,
+  table.pairing-matrix td{
+    width:36px;height:28px;text-align:center;vertical-align:middle;
+    border:1px solid var(--line);padding:0;
+  }
+  table.pairing-matrix th.row-header{
+    width:auto;min-width:80px;text-align:right;padding:0 8px;
+    font-weight:600;color:var(--ink);background:var(--tile);
+    position:sticky;left:0;z-index:1;
+  }
+  table.pairing-matrix th.col-header{
+    font-weight:600;color:var(--ink);background:var(--tile);
+    padding:4px 2px;font-size:11px;
+  }
+  table.pairing-matrix td.self{background:#E8E4D8;}
+  table.pairing-matrix td.c0{background:#fff;color:#bbb;}
+  table.pairing-matrix td.c1{background:#D4EDDA;color:#155724;font-weight:600;}
+  table.pairing-matrix td.c2{background:#A8D5B5;color:#0D3B1E;font-weight:700;}
+  table.pairing-matrix td.c3{background:#6DB88A;color:#fff;font-weight:700;}
+  table.pairing-matrix td.c4{background:#B23A2E;color:#fff;font-weight:700;}
+  .matrix-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;align-items:center;color:var(--muted);}
+  .matrix-legend .leg{display:flex;align-items:center;gap:4px;}
+  .matrix-legend .swatch{width:14px;height:14px;border-radius:2px;border:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="headerTitle">麻将比赛管理台</h1>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="stage-badge" id="stageBadge">未开始</span>
+    <a class="display-link" href="/display" target="_blank">打开大屏页面 ↗</a>
+  </div>
+</header>
+
+<main>
+  <div id="msgBox"></div>
+
+  <!-- 设置阶段 -->
+  <div class="card" id="setupCard">
+    <h2>选手名单与赛制设置</h2>
+    <div class="field" style="margin-bottom:14px;">
+      <label>比赛名称</label>
+      <input type="text" id="tournamentNameInput" placeholder="例：2026 春季麻将联赛" style="width:320px;">
+    </div>
+    <p class="hint">每行一个姓名。Active 人数须能被 4 整除,或配合 Bye 选手凑满。</p>
+    <textarea id="namesInput" placeholder="张三&#10;李四&#10;王五&#10;赵六&#10;..."></textarea>
+    <div class="row">
+      <div class="field">
+        <label>预赛轮数</label>
+        <input type="number" id="cfgPrelim" value="6" min="1">
+      </div>
+      <div class="field">
+        <label>半决赛轮数</label>
+        <input type="number" id="cfgSemi" value="1" min="1">
+      </div>
+      <div class="field">
+        <label>决赛轮数</label>
+        <input type="number" id="cfgFinal" value="1" min="1">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" onclick="setupTournament()">开始比赛</button>
+    </div>
+  </div>
+
+  <!-- 比赛进行中 -->
+  <div id="tournamentArea" style="display:none;">
+
+    <div class="card">
+      <h2>选手状态管理</h2>
+      <p class="hint">Active = 正常参赛 &nbsp;|&nbsp; Drop = 退出比赛(不再编排) &nbsp;|&nbsp; Bye = 备用占位(仅凑数时使用)</p>
+      <div class="player-mgmt-grid" id="playerMgmtGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>当前轮次</h2>
+      <p>阶段:<b id="stageText"></b> &nbsp;|&nbsp; 轮次:<b id="roundText"></b> / <span id="maxRoundText"></span></p>
+      <div class="actions">
+        <button class="btn-primary" onclick="generateRound()">生成本轮对阵</button>
+        <button class="btn-ghost" onclick="dryRun()">🎲 随机填充本轮成绩(Dry Run)</button>
+        <button class="btn-primary" onclick="advanceStage()" id="advanceBtn" style="display:none;">进入下一阶段</button>
+        <button class="btn-danger" onclick="resetTournament()">重置比赛</button>
+      </div>
+      <div id="tablesGrid" style="margin-top:18px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>排名榜</h2>
+      <div class="standings-grid" id="standingsGrid"></div>
+    </div>
+
+    <div class="card" id="pairingMatrixCard" style="display:none;">
+      <h2>预赛对阵统计矩阵</h2>
+      <p class="hint">数字表示两位选手在预赛中同桌的次数。</p>
+      <div class="matrix-wrap" id="pairingMatrixWrap"></div>
+      <div class="matrix-legend">
+        <span>同桌次数：</span>
+        <div class="leg"><div class="swatch" style="background:#fff;border-color:#bbb;"></div>0次</div>
+        <div class="leg"><div class="swatch" style="background:#D4EDDA;"></div>1次</div>
+        <div class="leg"><div class="swatch" style="background:#A8D5B5;"></div>2次</div>
+        <div class="leg"><div class="swatch" style="background:#6DB88A;"></div>3次</div>
+        <div class="leg"><div class="swatch" style="background:#B23A2E;"></div>4次以上</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+let STATE = null;
+
+function fmtNum(n){
+  if(n === null || n === undefined) return '';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function showMsg(text, type){
+  const box = document.getElementById('msgBox');
+  box.innerHTML = `<div class="msg ${type}">${text}</div>`;
+  setTimeout(()=>{ box.innerHTML=''; }, 4000);
+}
+
+async function api(path, opts){
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if(!res.ok){ throw new Error(data.error || '请求失败'); }
+  return data;
+}
+
+async function renderPairingMatrix(){
+  const card = document.getElementById('pairingMatrixCard');
+  const wrap = document.getElementById('pairingMatrixWrap');
+  // 只在预赛阶段或之后有轮次时显示
+  const hasPrelimRounds = STATE.currentRound > 0 || STATE.stage !== 'preliminary';
+  if(!hasPrelimRounds){ card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  let data;
+  try{ data = await api('/api/pairing-matrix'); }
+  catch(e){ wrap.innerHTML = '<p class="hint">无法加载矩阵数据</p>'; return; }
+
+  const players = data.players;
+  const matrix  = data.matrix;
+  if(players.length === 0){ wrap.innerHTML = '<p class="hint">暂无数据</p>'; return; }
+
+  const colorClass = n => n === 0 ? 'c0' : n === 1 ? 'c1' : n === 2 ? 'c2' : n === 3 ? 'c3' : 'c4';
+
+  let html = '<table class="pairing-matrix"><thead><tr><th class="row-header"></th>';
+  players.forEach(p => {
+    html += `<th class="col-header" title="${p.name}">${p.name}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  players.forEach((rowP, i) => {
+    html += `<tr><th class="row-header">${rowP.name}</th>`;
+    players.forEach((colP, j) => {
+      if(i === j){
+        html += `<td class="self">—</td>`;
+      } else {
+        const n = matrix[i][j];
+        html += `<td class="${colorClass(n)}" title="${rowP.name} vs ${colP.name}: ${n}次">${n}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+async function refreshState(){
+  STATE = await api('/api/state');
+  render();
+  await renderPairingMatrix();
+}
+
+function stageLabel(stage){
+  return {setup:'未开始',preliminary:'预赛 Preliminary',semifinal:'半决赛 Semi-final',
+           final:'决赛 Final',finished:'比赛结束'}[stage] || stage;
+}
+
+function render(){
+  document.getElementById('stageBadge').textContent = stageLabel(STATE.stage);
+  const title = STATE.tournamentName || '麻将比赛管理台';
+  document.getElementById('headerTitle').textContent = title;
+  if(STATE.stage === 'setup'){
+    document.getElementById('setupCard').style.display = 'block';
+    document.getElementById('tournamentArea').style.display = 'none';
+    return;
+  }
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('tournamentArea').style.display = 'block';
+
+  document.getElementById('stageText').textContent = stageLabel(STATE.stage);
+  document.getElementById('roundText').textContent = STATE.currentRound;
+  const maxRounds = STATE.stage in STATE.config ? '' : '';
+  const cfgKey = STATE.stage + 'Rounds';
+  document.getElementById('maxRoundText').textContent = STATE.config[cfgKey] !== undefined ? STATE.config[cfgKey] : '-';
+
+  renderPlayerMgmt();
+  renderTables();
+  renderStandings();
+
+  const advanceBtn = document.getElementById('advanceBtn');
+  const maxR = STATE.config[cfgKey];
+  if(STATE.stage !== 'finished' && maxR !== undefined && STATE.currentRound >= maxR && STATE.currentRoundData &&
+     STATE.currentRoundData.tables.every(t=>t.submitted)){
+    advanceBtn.style.display = 'inline-block';
+  } else {
+    advanceBtn.style.display = 'none';
+  }
+}
+
+function renderTables(){
+  const grid = document.getElementById('tablesGrid');
+  grid.innerHTML = '';
+  if(!STATE.currentRoundData){
+    grid.innerHTML = '<p class="hint">点击"生成本轮对阵"开始本轮。</p>';
+    return;
+  }
+
+  const fixedTables   = STATE.currentRoundData.tables.filter(t => t.isFixed);
+  const regularTables = STATE.currentRoundData.tables.filter(t => !t.isFixed);
+  const hasBoth = fixedTables.length > 0 && regularTables.length > 0;
+
+  function makeCard(t){
+    const card = document.createElement('div');
+    card.className = 'table-card' + (t.isFixed ? ' fixed' : '');
+    let rows = '';
+    for(let i=0;i<t.playerIds.length;i++){
+      const pid = t.playerIds[i];
+      const name = t.playerNames[i];
+      const pStatus = (t.playerStatuses && t.playerStatuses[i]) || 'active';
+      const isBye = pStatus === 'bye';
+      let val = '';
+      if(t.submitted){
+        const r = t.results.find(r=>r.playerId===pid);
+        val = r ? fmtNum(r.gamePoint) : '';
+      } else if(isBye){
+        val = '0';
+      }
+      const statusBadge = isBye ? '<span class="status-indicator bye">Bye</span>' : '';
+      rows += `<div class="player-row">
+        <span>${name}${statusBadge}</span>
+        <input type="number" data-table="${t.tableId}" data-player="${pid}" data-bye="${isBye}" value="${val}" ${isBye && !t.submitted ? 'style="color:var(--muted);background:#FFFDF0;"' : ''}>
+      </div>`;
+    }
+    card.innerHTML = `<div class="table-label"><span class="table-no">桌 ${t.tableId}</span> ${t.label} ${t.submitted?'<span class="submitted-tag">✓已提交</span>':''}</div>${rows}`;
+    const btn = document.createElement('button');
+    btn.className = t.submitted ? 'btn-ghost' : 'btn-accent';
+    btn.style.marginTop = '8px';
+    btn.style.width = '100%';
+    btn.textContent = t.submitted ? '重新提交本桌成绩(纠错)' : '提交本桌成绩';
+    btn.onclick = () => submitTable(t.tableId);
+    card.appendChild(btn);
+    return card;
+  }
+
+  // Official tables first
+  if(fixedTables.length > 0){
+    if(hasBoth){
+      const lbl = document.createElement('div');
+      lbl.className = 'tables-group-label official';
+      lbl.textContent = '官方桌';
+      grid.appendChild(lbl);
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'tables-grid';
+    fixedTables.forEach(t => wrap.appendChild(makeCard(t)));
+    grid.appendChild(wrap);
+  }
+
+  // Regular (陪打) tables after
+  if(regularTables.length > 0){
+    if(hasBoth){
+      const lbl = document.createElement('div');
+      lbl.className = 'tables-group-label';
+      lbl.style.marginTop = '20px';
+      lbl.textContent = '陪打桌';
+      grid.appendChild(lbl);
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'tables-grid';
+    regularTables.forEach(t => wrap.appendChild(makeCard(t)));
+    grid.appendChild(wrap);
+  }
+}
+
+function fmtGP(n){
+  if(n === null || n === undefined || n === '-') return '-';
+  const v = parseFloat(n);
+  if(isNaN(v)) return '-';
+  const s = Number.isInteger(v) ? String(Math.abs(v)) : Math.abs(v).toFixed(1);
+  return (v > 0 ? '+' : v < 0 ? '-' : '') + s;
+}
+
+function stageName(s){
+  return {preliminary:'预赛',semifinal:'半决赛',final:'决赛'}[s] || s;
+}
+
+const STANDINGS_ORDER = ['semifinalA','semifinalB','champion','consolation','preliminary','others'];
+const STANDINGS_TITLES = {
+  preliminary:'预赛总排名',
+  semifinalA:'半决赛 A 桌',
+  semifinalB:'半决赛 B 桌',
+  others:'其他选手(不计入正式排名)',
+  champion:'决赛冠军桌(1-4名)',
+  consolation:'决赛附加桌(5-8名)',
+};
+
+function renderPlayerMgmt(){
+  const grid = document.getElementById('playerMgmtGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const statusLabel = {active:'Active', drop:'Drop', bye:'Bye'};
+  for(const p of STATE.players){
+    const pill = document.createElement('div');
+    pill.className = 'player-pill';
+    const curStatus = p.status || 'active';
+    pill.innerHTML = `<span class="pname">${p.name}</span>
+      <span class="status-indicator ${curStatus}">${statusLabel[curStatus]}</span>`;
+    for(const s of ['active','drop','bye']){
+      if(s === curStatus) continue;
+      const btn = document.createElement('button');
+      btn.className = `status-btn ${s}`;
+      btn.textContent = '→ ' + statusLabel[s];
+      btn.onclick = () => setPlayerStatus(p.id, s);
+      pill.appendChild(btn);
+    }
+    grid.appendChild(pill);
+  }
+}
+
+async function setPlayerStatus(playerId, status){
+  try{
+    await api('/api/player/status', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({playerId, status})});
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+function renderStandings(){
+  const grid = document.getElementById('standingsGrid');
+  grid.innerHTML = '';
+  const s = STATE.standings || {};
+
+  if(STATE.stage === 'finished'){
+    const banner = document.createElement('div');
+    banner.className = 'standings-block';
+    const names = STATE.finalRankingNames || [];
+    let body = '';
+    names.forEach((n,i) => {
+      if(i === 8){
+        body += `<tr class="rank-divider-row"><td colspan="2">── 以下不计入正式排名 ──</td></tr>`;
+      }
+      body += `<tr${i>=8?' class="others-row"':''}><td>${i+1}</td><td>${n}</td></tr>`;
+    });
+    banner.innerHTML = `<h3>🏆 最终名次</h3>
+      <table class="standings"><thead><tr><th>名次</th><th>姓名</th></tr></thead><tbody>${body}</tbody></table>`;
+    grid.appendChild(banner);
+    renderSummary(grid);
+    return;
+  }
+
+  // 官方桌排名固定在上方(左侧)
+  const officialKeys = ['semifinalA','semifinalB','champion','consolation','preliminary'].filter(k => s[k] !== undefined);
+  if(officialKeys.length > 0){
+    const officialWrap = document.createElement('div');
+    officialWrap.className = 'standings-grid';
+    for(const key of officialKeys){
+      const rows = s[key];
+      let body = '';
+      rows.forEach((r,idx)=>{
+        body += `<tr><td>${idx+1}</td><td>${r.name}</td><td class="num">${fmtNum(r.tablePoint)}</td><td class="num">${fmtGP(r.gamePoint)}</td></tr>`;
+      });
+      const block = document.createElement('div');
+      block.className = 'standings-block';
+      block.innerHTML = `<h3>${STANDINGS_TITLES[key]||key}</h3>
+        <table class="standings">
+          <thead><tr><th>名次</th><th>姓名</th><th>Table Pt</th><th>Game Pt</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+      officialWrap.appendChild(block);
+    }
+    grid.appendChild(officialWrap);
+  }
+
+  // 其他选手单独一行放在下方
+  if(s['others'] && s['others'].length > 0){
+    const othersWrap = document.createElement('div');
+    othersWrap.className = 'standings-grid';
+    othersWrap.style.marginTop = '20px';
+    const rows = s['others'];
+    let body = '';
+    rows.forEach((r,idx)=>{
+      body += `<tr><td>${idx+1}</td><td>${r.name}</td><td class="num">${fmtNum(r.tablePoint)}</td><td class="num">${fmtGP(r.gamePoint)}</td></tr>`;
+    });
+    const block = document.createElement('div');
+    block.className = 'standings-block';
+    block.innerHTML = `<h3>${STANDINGS_TITLES['others']}</h3>
+      <table class="standings">
+        <thead><tr><th>名次</th><th>姓名</th><th>Table Pt</th><th>Game Pt</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>`;
+    othersWrap.appendChild(block);
+    grid.appendChild(othersWrap);
+  }
+}
+
+function renderSummary(container){
+  const summary = STATE.finalSummary;
+  if(!summary || summary.length === 0) return;
+  const cfg = STATE.config;
+  const stages = ['preliminary','semifinal','final'];
+  const roundCounts = {
+    preliminary: cfg.preliminaryRounds || 0,
+    semifinal:   cfg.semifinalRounds   || 0,
+    final:       cfg.finalRounds       || 0,
+  };
+
+  let stageHeaderCells = '';
+  let roundHeaderCells = '<th>名次</th><th class="name-col">姓名</th>';
+  stages.forEach(s => {
+    const n = roundCounts[s];
+    if(!n) return;
+    const span = n * 2 + 2;
+    stageHeaderCells += `<th colspan="${span}">${stageName(s)}</th>`;
+    for(let i = 1; i <= n; i++){
+      roundHeaderCells += `<th>第${i}局 TP</th><th>第${i}局 GP</th>`;
+    }
+    roundHeaderCells += `<th>小计 TP</th><th>小计 GP</th>`;
+  });
+  stageHeaderCells += '<th colspan="2">总计</th>';
+  roundHeaderCells += '<th>总 TP</th><th>总 GP</th>';
+
+  const totalCols = 2 + stages.filter(s=>roundCounts[s]>0).reduce((a,s)=>a+roundCounts[s]*2+2, 0) + 2;
+  let rows = '';
+  summary.forEach(p => {
+    if(p.rank === 9){
+      rows += `<tr class="sum-divider"><td colspan="${totalCols}">── 以下不计入正式排名 ──</td></tr>`;
+    }
+    const rowClass = p.rank >= 9 ? ' class="sum-others"' : '';
+    let cells = `<td class="srank">${p.rank}</td><td class="name-col">${p.name}</td>`;
+    stages.forEach(s => {
+      const n = roundCounts[s];
+      if(!n) return;
+      const stageRounds = p.rounds.filter(r => r.stage === s);
+      for(let i = 1; i <= n; i++){
+        const rnd = stageRounds.find(r => r.round === i);
+        cells += `<td>${rnd ? fmtNum(rnd.tablePoint) : '-'}</td><td>${rnd ? fmtGP(rnd.gamePoint) : '-'}</td>`;
+      }
+      const st = p.stageTotals[s];
+      cells += `<td class="subtotal">${fmtNum(st.tablePoint)}</td><td class="subtotal">${fmtGP(st.gamePoint)}</td>`;
+    });
+    cells += `<td class="grandtotal">${fmtNum(p.totalTablePoint)}</td><td class="grandtotal">${fmtGP(p.totalGamePoint)}</td>`;
+    rows += `<tr${rowClass}>${cells}</tr>`;
+  });
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'grid-column:1/-1;overflow-x:auto;margin-top:16px;';
+  wrap.innerHTML = `
+    <h3 style="color:var(--felt);font-size:13px;margin:0 0 8px;">完整成绩汇总</h3>
+    <table class="summary-table">
+      <thead>
+        <tr class="stage-hdr"><th colspan="2"></th>${stageHeaderCells}</tr>
+        <tr>${roundHeaderCells}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  container.appendChild(wrap);
+}
+
+async function setupTournament(){
+  const names = document.getElementById('namesInput').value.split('\n');
+  const tournamentName = document.getElementById('tournamentNameInput').value.trim();
+  const config = {
+    preliminaryRounds: parseInt(document.getElementById('cfgPrelim').value),
+    semifinalRounds: parseInt(document.getElementById('cfgSemi').value),
+    finalRounds: parseInt(document.getElementById('cfgFinal').value),
+  };
+  try{
+    await api('/api/setup', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({names, config, tournamentName})});
+    showMsg('比赛已初始化', 'ok');
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+async function generateRound(){
+  try{
+    await api('/api/round/generate', {method:'POST'});
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+async function submitTable(tableId){
+  const t = STATE.currentRoundData.tables.find(t => t.tableId === tableId);
+  if(!t) return;
+  const results = [];
+  for(const pid of t.playerIds){
+    const input = document.querySelector(`input[data-table="${tableId}"][data-player="${pid}"]`);
+    const v = input.value;
+    if(v === ''){ showMsg('请填写本桌所有选手的 Game Point', 'error'); return; }
+    results.push({playerId: pid, gamePoint: parseFloat(v)});
+  }
+  try{
+    await api('/api/table/submit', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({tableId, results})});
+    showMsg(`桌 ${tableId} 成绩已提交`, 'ok');
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+async function dryRun(){
+  try{
+    await api('/api/round/dryrun', {method:'POST'});
+    showMsg('已随机填充并提交本轮成绩(Dry Run)', 'ok');
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+async function advanceStage(){
+  try{
+    const r = await api('/api/stage/advance', {method:'POST'});
+    showMsg('已进入下一阶段', 'ok');
+    await refreshState();
+  }catch(e){ showMsg(e.message, 'error'); }
+}
+
+async function resetTournament(){
+  if(!confirm('确定要重置比赛吗?所有数据将清空。')) return;
+  await api('/api/reset', {method:'POST'});
+  showMsg('比赛已重置', 'ok');
+  await refreshState();
+}
+
+refreshState();
+</script>
+</body>
+</html>
