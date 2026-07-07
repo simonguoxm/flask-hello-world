@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>麻将比赛 - 实时大屏</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --felt:#0B3327;
+    --felt-deep:#082821;
+    --tile:#FAF6EC;
+    --gold:#D4AF37;
+    --accent:#C24A3A;
+    --line:rgba(250,246,236,0.18);
+    --muted:#9FBDAF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:radial-gradient(ellipse at top, var(--felt) 0%, var(--felt-deep) 70%);
+    color:var(--tile);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;
+  }
+  header{
+    text-align:center;
+    padding:28px 0 18px;
+    border-bottom:2px solid var(--gold);
+  }
+  header h1{margin:0;font-size:42px;letter-spacing:6px;font-weight:800;color:var(--gold);}
+  header .sub{margin-top:8px;font-size:20px;color:var(--tile);letter-spacing:2px;}
+  main{max-width:1500px;margin:0 auto;padding:30px 36px 60px;}
+
+  /* ── section titles ── */
+  .section-title{
+    font-size:22px;color:var(--gold);letter-spacing:2px;
+    margin:0 0 16px;border-left:6px solid var(--accent);padding-left:14px;
+  }
+  .sub-section-title{
+    font-size:15px;color:var(--muted);letter-spacing:1px;
+    margin:0 0 10px 4px;text-transform:uppercase;
+  }
+
+  /* ── seat tables ── */
+  .tables-section{margin-bottom:46px;}
+  .tables-group{margin-bottom:28px;}
+  .tables-wrap{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+  }
+  .table-box{
+    background:rgba(250,246,236,0.06);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px;
+  }
+  .table-box.fixed{
+    background:rgba(212,175,55,0.08);
+    border-color:rgba(212,175,55,0.4);
+  }
+  .table-box .label{
+    font-size:16px;font-weight:700;color:#E2877A;
+    margin-bottom:10px;letter-spacing:1px;
+  }
+  .table-box.fixed .label{color:var(--gold);}
+  .table-box .table-no{
+    display:inline-block;
+    background:var(--gold);color:var(--felt-deep);
+    font-size:14px;font-weight:800;
+    padding:3px 10px;border-radius:4px;
+    letter-spacing:0;margin-right:10px;
+  }
+  .table-box .seat{
+    font-size:22px;padding:6px 0;
+    border-bottom:1px dashed var(--line);
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  }
+  .table-box .seat:last-child{border-bottom:none;}
+  .seat-name{flex:1;}
+  .seat-score{font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold);white-space:nowrap;}
+  .seat-score.neg{color:#E2877A;}
+  .seat-tp{font-size:14px;color:var(--muted);font-weight:400;margin-left:6px;}
+
+  /* ── standings ── */
+  .standings-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:26px;}
+  table.board{width:100%;border-collapse:collapse;font-size:18px;}
+  table.board th{
+    text-align:left;color:var(--muted);font-weight:600;font-size:13px;
+    letter-spacing:1px;padding:8px 10px;border-bottom:2px solid var(--line);
+  }
+  table.board td{padding:9px 10px;border-bottom:1px solid var(--line);}
+  table.board td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  table.board tr:nth-child(1) td{color:var(--gold);font-weight:700;}
+  .standings-block h3{font-size:16px;margin:0 0 10px;color:var(--tile);letter-spacing:1px;}
+
+  /* ── misc ── */
+  .empty-hint{font-size:18px;color:var(--muted);text-align:center;padding:40px 0;}
+  .divider{border:none;border-top:1px solid var(--line);margin:32px 0;}
+
+  /* ── final banner ── */
+  .final-banner{text-align:center;margin-bottom:40px;}
+  .final-banner h2{font-size:30px;color:var(--gold);letter-spacing:4px;}
+  .final-list{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:18px;}
+  .final-list .pill{
+    background:rgba(212,175,55,0.15);border:1px solid var(--gold);
+    border-radius:30px;padding:10px 22px;font-size:20px;
+  }
+  .final-list .pill b{color:var(--gold);margin-right:8px;}
+  .final-divider{
+    width:100%;text-align:center;color:var(--muted);
+    font-size:13px;letter-spacing:2px;margin:16px 0 10px;
+  }
+  .final-list.others .pill{
+    background:rgba(250,246,236,0.05);
+    border-color:rgba(250,246,236,0.2);
+    font-size:16px;padding:7px 16px;
+  }
+  .final-list.others .pill b{color:var(--muted);}
+
+  /* ── summary table ── */
+  .summary-wrap{overflow-x:auto;margin-top:24px;}
+  table.summary{
+    width:100%;border-collapse:collapse;font-size:14px;
+    white-space:nowrap;
+  }
+  table.summary th{
+    background:rgba(212,175,55,0.15);color:var(--gold);
+    font-weight:700;font-size:12px;letter-spacing:0.5px;
+    padding:8px 10px;border-bottom:2px solid var(--line);
+    text-align:center;
+  }
+  table.summary th.left{text-align:left;}
+  table.summary td{
+    padding:8px 10px;border-bottom:1px solid var(--line);
+    text-align:right;font-variant-numeric:tabular-nums;
+  }
+  table.summary td.left{text-align:left;}
+  table.summary td.rank{color:var(--gold);font-weight:800;font-size:16px;text-align:center;}
+  table.summary td.subtotal{
+    background:rgba(250,246,236,0.06);font-weight:700;color:var(--tile);
+  }
+  table.summary td.grandtotal{
+    background:rgba(212,175,55,0.12);font-weight:800;
+    color:var(--gold);font-size:15px;
+  }
+  table.summary tr:hover td{background:rgba(250,246,236,0.04);}
+  table.summary tr.rank-divider td{
+    text-align:center;font-size:12px;color:var(--muted);
+    letter-spacing:2px;padding:6px;
+    border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);
+    background:rgba(212,175,55,0.06);
+  }
+  table.summary tr.others-row td{opacity:0.65;}
+  table.summary tr.others-row td.rank{color:var(--muted);}
+  .stage-group-header{
+    background:rgba(212,175,55,0.08);
+    text-align:center;font-size:11px;letter-spacing:1px;
+    color:var(--muted);padding:4px;border-bottom:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="headerTitle">麻 将 比 赛</h1>
+  <div class="sub" id="stageSub">等待开始...</div>
+</header>
+
+<main id="main"></main>
+
+<script>
+function fmtNum(n){
+  if(n === null || n === undefined || n === '-') return '-';
+  const v = parseFloat(n);
+  if(isNaN(v)) return '-';
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+function fmtGP(n){
+  if(n === null || n === undefined || n === '-') return '-';
+  const v = parseFloat(n);
+  if(isNaN(v)) return '-';
+  const s = Number.isInteger(v) ? String(Math.abs(v)) : Math.abs(v).toFixed(1);
+  return (v > 0 ? '+' : v < 0 ? '-' : '') + s;
+}
+
+function stageLabel(stage){
+  return {setup:'未开始',preliminary:'预赛 PRELIMINARY',semifinal:'半决赛 SEMI-FINAL',
+           final:'决赛 FINAL',finished:'比赛结束'}[stage] || stage;
+}
+function stageName(s){
+  return {preliminary:'预赛',semifinal:'半决赛',final:'决赛'}[s] || s;
+}
+
+const STANDINGS_ORDER = ['semifinalA','semifinalB','champion','consolation','preliminary','others'];
+const standingsTitles = {
+  preliminary:'预赛总排名',
+  semifinalA:'半决赛 A 桌',
+  semifinalB:'半决赛 B 桌',
+  others:'其他选手(陪打)',
+  champion:'决赛冠军桌(争夺 1-4 名)',
+  consolation:'决赛附加桌(争夺 5-8 名)',
+};
+
+async function tick(){
+  try{
+    const res = await fetch('/api/state');
+    const s = await res.json();
+    render(s);
+  }catch(e){}
+}
+
+function renderTables(currentRoundData, stage){
+  if(!currentRoundData) return `<div class="empty-hint">本轮尚未生成对阵</div>`;
+
+  const fixedTables   = currentRoundData.tables.filter(t => t.isFixed);
+  const regularTables = currentRoundData.tables.filter(t => !t.isFixed);
+
+  function tableCard(t){
+    let seats = '';
+    t.playerIds.forEach((pid, i) => {
+      const name = t.playerNames[i];
+      const pStatus = (t.playerStatuses && t.playerStatuses[i]) || 'active';
+      const statusBadge = pStatus === 'bye'  ? ' <span style="font-size:13px;background:#FFF8E1;color:#7A5F00;border-radius:6px;padding:1px 7px;font-weight:700;">Bye</span>' :
+                          pStatus === 'drop' ? ' <span style="font-size:13px;background:#FBEAE7;color:#B23A2E;border-radius:6px;padding:1px 7px;font-weight:700;">Drop</span>' : '';
+      let scoreHtml = '';
+      if(t.submitted){
+        const r = t.results.find(rr => rr.playerId === pid);
+        if(r){
+          const negClass = r.gamePoint < 0 ? ' neg' : '';
+          scoreHtml = `<span class="seat-score${negClass}">${fmtGP(r.gamePoint)}<span class="seat-tp">TP ${fmtNum(r.tablePoint)}</span></span>`;
+        }
+      }
+      seats += `<div class="seat"><span class="seat-name">${name}${statusBadge}</span>${scoreHtml}</div>`;
+    });
+    const fixedClass = t.isFixed ? ' fixed' : '';
+    return `<div class="table-box${fixedClass}">
+      <div class="label"><span class="table-no">桌 ${t.tableId}</span>${t.label}${t.submitted ? ' · 已结束' : ''}</div>
+      ${seats}
+    </div>`;
+  }
+
+  let html = '<div class="tables-section">';
+
+  // Fixed tables first (with their own sub-header if mixed with regular tables)
+  if(fixedTables.length > 0){
+    if(regularTables.length > 0){
+      html += `<div class="sub-section-title">官方桌</div>`;
+    }
+    html += `<div class="tables-group"><div class="tables-wrap">`;
+    fixedTables.forEach(t => { html += tableCard(t); });
+    html += `</div></div>`;
+  }
+
+  // Regular (陪打) tables after
+  if(regularTables.length > 0){
+    if(fixedTables.length > 0){
+      html += `<div class="sub-section-title" style="margin-top:18px;">陪打桌</div>`;
+    }
+    html += `<div class="tables-group"><div class="tables-wrap">`;
+    regularTables.forEach(t => { html += tableCard(t); });
+    html += `</div></div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderSummary(summary, config){
+  if(!summary || summary.length === 0) return '';
+
+  // Determine which stages and how many rounds each has
+  const stages = ['preliminary','semifinal','final'];
+  const roundCounts = {
+    preliminary: config.preliminaryRounds || 0,
+    semifinal:   config.semifinalRounds   || 0,
+    final:       config.finalRounds       || 0,
+  };
+
+  // Build header
+  let colSpanTotal = 2; // rank + name
+  let stageHeaderCells = '';
+  let roundHeaderCells = '<th class="left">名次</th><th class="left">姓名</th>';
+  stages.forEach(s => {
+    const n = roundCounts[s];
+    if(n === 0) return;
+    // Each round = 2 cols (TP + GP), plus 2 cols subtotal
+    const span = n * 2 + 2;
+    colSpanTotal += span;
+    stageHeaderCells += `<th colspan="${span}">${stageName(s)}</th>`;
+    for(let i = 1; i <= n; i++){
+      roundHeaderCells += `<th>第${i}局<br><small>TP</small></th><th>第${i}局<br><small>GP</small></th>`;
+    }
+    roundHeaderCells += `<th>小计<br><small>TP</small></th><th>小计<br><small>GP</small></th>`;
+  });
+  // Grand total cols
+  stageHeaderCells += '<th colspan="2">总计</th>';
+  roundHeaderCells += '<th>总 TP</th><th>总 GP</th>';
+
+  let rows = '';
+  summary.forEach(p => {
+    if(p.rank === 9){
+      rows += `<tr class="rank-divider"><td colspan="${colSpanTotal}">── 以下不计入正式排名 ──</td></tr>`;
+    }
+    const rowClass = p.rank >= 9 ? ' class="others-row"' : '';
+    let cells = `<td class="rank">${p.rank}</td><td class="left">${p.name}</td>`;
+
+    stages.forEach(s => {
+      const n = roundCounts[s];
+      if(n === 0) return;
+      const stageRounds = p.rounds.filter(r => r.stage === s);
+      for(let i = 1; i <= n; i++){
+        const rnd = stageRounds.find(r => r.round === i);
+        const tp = rnd ? fmtNum(rnd.tablePoint) : '-';
+        const gp = rnd ? fmtGP(rnd.gamePoint)  : '-';
+        cells += `<td>${tp}</td><td>${gp}</td>`;
+      }
+      const st = p.stageTotals[s];
+      cells += `<td class="subtotal">${fmtNum(st.tablePoint)}</td><td class="subtotal">${fmtGP(st.gamePoint)}</td>`;
+    });
+
+    cells += `<td class="grandtotal">${fmtNum(p.totalTablePoint)}</td><td class="grandtotal">${fmtGP(p.totalGamePoint)}</td>`;
+    rows += `<tr${rowClass}>${cells}</tr>`;
+  });
+
+  return `
+    <div class="section-title" style="margin-top:40px;">完整成绩汇总</div>
+    <div class="summary-wrap">
+      <table class="summary">
+        <thead>
+          <tr class="stage-group-header">
+            <th colspan="2"></th>
+            ${stageHeaderCells}
+          </tr>
+          <tr>${roundHeaderCells}</tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function render(s){
+  const cfgKey = s.stage + 'Rounds';
+  const maxR = s.config[cfgKey];
+  let sub = stageLabel(s.stage);
+  if(maxR !== undefined) sub += ` &nbsp;|&nbsp; 第 ${s.currentRound} / ${maxR} 轮`;
+  document.getElementById('stageSub').innerHTML = sub;
+  if(s.tournamentName){
+    document.getElementById('headerTitle').textContent = s.tournamentName;
+  }
+
+  const main = document.getElementById('main');
+  let html = '';
+
+  if(s.stage === 'setup'){
+    html += `<div class="empty-hint">比赛尚未开始,请在管理台设置选手名单。</div>`;
+    main.innerHTML = html;
+    return;
+  }
+
+  if(s.stage === 'finished'){
+    html += `<div class="final-banner"><h2>🏆 最 终 名 次 🏆</h2>`;
+    html += `<div class="final-list">`;
+    s.finalRankingNames.forEach((n,i)=>{
+      if(i === 8){
+        html += `</div>
+          <div class="final-divider">── 以下选手不计入正式排名 ──</div>
+          <div class="final-list others">`;
+      }
+      html += `<div class="pill${i>=8?' other':''}"><b>${i+1}</b>${n}</div>`;
+    });
+    html += `</div></div>`;
+    html += renderSummary(s.finalSummary, s.config);
+    main.innerHTML = html;
+    return;
+  }
+
+  // Ongoing stage: seat map + standings
+  html += `<div class="section-title">本轮座位表</div>`;
+  html += renderTables(s.currentRoundData, s.stage);
+
+  html += `<div class="section-title">排名榜</div>`;
+  const st = s.standings || {};
+
+  // 官方桌排名(semifinalA/B 或 champion/consolation):固定在上方、左边
+  const officialKeys = ['semifinalA','semifinalB','champion','consolation','preliminary'].filter(k => st[k]);
+  if(officialKeys.length > 0){
+    html += `<div class="standings-wrap">`;
+    for(const key of officialKeys){
+      const rows = st[key];
+      let body = rows.map((r,idx)=>
+        `<tr><td>${idx+1}</td><td>${r.name}</td><td class="num">${fmtNum(r.tablePoint)}</td><td class="num">${fmtGP(r.gamePoint)}</td></tr>`
+      ).join('');
+      html += `<div class="standings-block"><h3>${standingsTitles[key]||key}</h3>
+        <table class="board"><thead><tr><th>名次</th><th>姓名</th><th>Table Pt</th><th>Game Pt</th></tr></thead>
+        <tbody>${body}</tbody></table></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // 其他选手(陪打):单独一行,放在下方
+  if(st['others'] && st['others'].length > 0){
+    const rows = st['others'];
+    let body = rows.map((r,idx)=>
+      `<tr><td>${idx+1}</td><td>${r.name}</td><td class="num">${fmtNum(r.tablePoint)}</td><td class="num">${fmtGP(r.gamePoint)}</td></tr>`
+    ).join('');
+    html += `<div class="standings-wrap" style="margin-top:24px;">
+      <div class="standings-block"><h3>${standingsTitles['others']}</h3>
+        <table class="board"><thead><tr><th>名次</th><th>姓名</th><th>Table Pt</th><th>Game Pt</th></tr></thead>
+        <tbody>${body}</tbody></table></div>
+    </div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+tick();
+setInterval(tick, 2500);
+</script>
+</body>
+</html>
